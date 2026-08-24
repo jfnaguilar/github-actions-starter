@@ -1,0 +1,86 @@
+name: Qualidade · Pull Request
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-quality-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: Título no padrão Conventional Commits
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            O assunto "{subject}" deve começar em minúscula.
+            Exemplo: "feat: adiciona cache no build"
+
+  labels:
+    name: Rótulos automáticos
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Rótulos por caminho de arquivo
+        uses: actions/labeler@v5
+        continue-on-error: true
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          sync-labels: true
+
+      - name: Rótulo de tamanho
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          ADD: ${{ github.event.pull_request.additions }}
+          DEL: ${{ github.event.pull_request.deletions }}
+        run: |
+          total=$((ADD + DEL))
+          if   [ "$total" -lt 10 ];   then size="size/XS"
+          elif [ "$total" -lt 50 ];   then size="size/S"
+          elif [ "$total" -lt 250 ];  then size="size/M"
+          elif [ "$total" -lt 800 ];  then size="size/L"
+          else size="size/XL"; fi
+          echo "Total de linhas alteradas: $total → $size"
+          gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$size" || true
+          if [ "$total" -ge 800 ]; then
+            echo "::warning::PR muito grande ($total linhas). Considere dividir em partes menores."
+          fi
+
+  actionlint:
+    name: Validar os próprios workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: actionlint
+        run: |
+          bash <(curl -sSf https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color
