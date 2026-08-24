@@ -1,0 +1,34 @@
+name: Manutenção · Issues e PRs parados
+
+on:
+  schedule:
+    - cron: '30 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-stale: 60
+          days-before-close: 14
+          stale-issue-label: parado
+          stale-pr-label: parado
+          exempt-issue-labels: 'pinned,security,roadmap'
+          exempt-pr-labels: 'pinned,security'
+          stale-issue-message: >
+            Esta issue está sem atividade há 60 dias e foi marcada como parada.
+            Comente se ainda for relevante — caso contrário será fechada em 14 dias.
+          stale-pr-message: >
+            Este PR está sem atividade há 60 dias e foi marcado como parado.
+            Atualize-o se ainda pretende seguir — caso contrário será fechado em 14 dias.
+          close-issue-message: 'Fechado automaticamente por inatividade. Reabra se necessário.'
+          close-pr-message: 'Fechado automaticamente por inatividade. Reabra se necessário.'
+          operations-per-run: 100
