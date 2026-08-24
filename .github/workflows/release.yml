@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  # Permite que outros repositorios reutilizem este workflow
+  workflow_call:
+
   push:
     tags: ['v*.*.*']
   workflow_dispatch:
