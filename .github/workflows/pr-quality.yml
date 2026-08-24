@@ -1,6 +1,9 @@
 name: Qualidade · Pull Request
 
 on:
+  # Permite que outros repositorios reutilizem este workflow
+  workflow_call:
+
   pull_request:
     types: [opened, edited, reopened, synchronize, ready_for_review]
 
