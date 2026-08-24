@@ -1,0 +1,48 @@
+name: Relatar bug
+description: Algo não funciona como esperado
+title: 'fix: '
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: O que aconteceu?
+      description: Descreva o comportamento observado.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: O que era esperado?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Versão / commit
+      placeholder: v1.2.3 ou hash do commit
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Sistema operacional
+      options: [Linux, macOS, Windows, Outro]
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs relevantes
+      render: shell
