@@ -1,0 +1,77 @@
+name: Segurança · CodeQL
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Toda segunda-feira às 06:00 UTC (03:00 em São Paulo)
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    name: Detectar linguagens
+    runs-on: ubuntu-latest
+    outputs:
+      languages: ${{ steps.set.outputs.languages }}
+      any: ${{ steps.set.outputs.any }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: set
+        shell: bash
+        run: |
+          langs=()
+          if git ls-files '*.py' | head -1 | grep -q .; then langs+=("python"); fi
+          if git ls-files '*.js' '*.jsx' '*.ts' '*.tsx' '*.mjs' '*.cjs' | head -1 | grep -q .; then langs+=("javascript-typescript"); fi
+          if git ls-files '*.go' | head -1 | grep -q .; then langs+=("go"); fi
+          if git ls-files '*.rb' | head -1 | grep -q .; then langs+=("ruby"); fi
+          if git ls-files '*.java' '*.kt' | head -1 | grep -q .; then langs+=("java-kotlin"); fi
+          if git ls-files '*.cs' | head -1 | grep -q .; then langs+=("csharp"); fi
+          if git ls-files '*.rs' | head -1 | grep -q .; then langs+=("rust"); fi
+          if git ls-files '*.swift' | head -1 | grep -q .; then langs+=("swift"); fi
+          if [ ${#langs[@]} -eq 0 ]; then
+            echo "any=false" >> "$GITHUB_OUTPUT"
+            echo "languages=[]" >> "$GITHUB_OUTPUT"
+          else
+            json=$(printf '"%s",' "${langs[@]}")
+            echo "any=true" >> "$GITHUB_OUTPUT"
+            echo "languages=[${json%,}]" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Linguagens: ${langs[*]:-nenhuma}"
+
+  analyze:
+    name: Analisar (${{ matrix.language }})
+    needs: detect
+    if: needs.detect.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(needs.detect.outputs.languages) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Inicializar CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4
+
+      - name: Análise
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: '/language:${{ matrix.language }}'
