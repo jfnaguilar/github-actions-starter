@@ -1,6 +1,9 @@
 name: Manutenção · Issues e PRs parados
 
 on:
+  # Permite que outros repositorios reutilizem este workflow
+  workflow_call:
+
   schedule:
     - cron: '30 8 * * *'
   workflow_dispatch:
