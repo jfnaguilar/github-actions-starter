@@ -1,0 +1,114 @@
+name: CI · Node / TypeScript
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-node-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: Detectar projeto Node
+    runs-on: ubuntu-latest
+    outputs:
+      found: ${{ steps.check.outputs.found }}
+      manager: ${{ steps.check.outputs.manager }}
+      has_lint: ${{ steps.check.outputs.has_lint }}
+      has_build: ${{ steps.check.outputs.has_build }}
+      has_test: ${{ steps.check.outputs.has_test }}
+      has_typecheck: ${{ steps.check.outputs.has_typecheck }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: check
+        shell: bash
+        run: |
+          if [ ! -f package.json ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "Nenhum package.json — pulando."
+            exit 0
+          fi
+          echo "found=true" >> "$GITHUB_OUTPUT"
+
+          manager=npm
+          [ -f pnpm-lock.yaml ] && manager=pnpm
+          [ -f yarn.lock ] && manager=yarn
+          echo "manager=$manager" >> "$GITHUB_OUTPUT"
+
+          has() { node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)"; }
+          for s in lint build test typecheck; do
+            if has "$s"; then echo "has_$s=true" >> "$GITHUB_OUTPUT"; else echo "has_$s=false" >> "$GITHUB_OUTPUT"; fi
+          done
+          cat "$GITHUB_OUTPUT"
+
+  build-test:
+    name: Node ${{ matrix.node-version }}
+    needs: detect
+    if: needs.detect.outputs.found == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['20', '22', '24']
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Habilitar corepack (pnpm/yarn)
+        if: needs.detect.outputs.manager != 'npm'
+        run: corepack enable
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: ${{ needs.detect.outputs.manager }}
+
+      - name: Instalar dependências
+        run: |
+          case "${{ needs.detect.outputs.manager }}" in
+            pnpm) pnpm install --frozen-lockfile ;;
+            yarn) yarn install --immutable || yarn install --frozen-lockfile ;;
+            *) if [ -f package-lock.json ]; then npm ci; else npm install; fi ;;
+          esac
+
+      - name: Lint
+        if: needs.detect.outputs.has_lint == 'true'
+        run: ${{ needs.detect.outputs.manager }} run lint
+
+      - name: Type check
+        if: needs.detect.outputs.has_typecheck == 'true'
+        run: ${{ needs.detect.outputs.manager }} run typecheck
+
+      - name: Build
+        if: needs.detect.outputs.has_build == 'true'
+        run: ${{ needs.detect.outputs.manager }} run build
+
+      - name: Testes
+        if: needs.detect.outputs.has_test == 'true'
+        run: ${{ needs.detect.outputs.manager }} test
+
+      - name: Aviso — sem script de teste
+        if: needs.detect.outputs.has_test != 'true'
+        run: echo "::warning::package.json não tem script \"test\" — nenhum teste executado."
+
+  audit:
+    name: Auditoria de dependências
+    needs: detect
+    if: needs.detect.outputs.found == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: npm audit (nível alto)
+        run: npm audit --audit-level=high
