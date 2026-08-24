@@ -1,6 +1,9 @@
 name: Segurança · CodeQL
 
 on:
+  # Permite que outros repositorios reutilizem este workflow
+  workflow_call:
+
   push:
     branches: [main, master]
   pull_request:
