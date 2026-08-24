@@ -1,0 +1,30 @@
+name: Sugerir funcionalidade
+description: Propor uma melhoria ou nova funcionalidade
+title: 'feat: '
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema isso resolve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solução proposta
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribuição
+      options:
+        - label: Tenho interesse em implementar isso
