@@ -1,6 +1,9 @@
 name: Segurança · Segredos & Dependências
 
 on:
+  # Permite que outros repositorios reutilizem este workflow
+  workflow_call:
+
   push:
     branches: [main, master, develop]
   pull_request:
