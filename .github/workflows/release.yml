@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag a publicar (ex.: v1.2.3)'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Publicar release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Definir tag
+        id: tag
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Gerar changelog desde a tag anterior
+        id: changelog
+        shell: bash
+        run: |
+          current="${{ steps.tag.outputs.tag }}"
+          previous=$(git tag --sort=-creatordate | grep -v "^${current}$" | head -n1 || true)
+          if [ -n "$previous" ]; then
+            range="${previous}..HEAD"
+            echo "Comparando $range"
+          else
+            range=""
+          fi
+          {
+            echo "## Mudanças"
+            echo
+            git log --no-merges --pretty=format:'- %s (%h)' $range | sed '/^- \(chore\|ci\)(deps)/d'
+            echo
+            echo
+            if [ -n "$previous" ]; then
+              echo "**Comparar:** https://github.com/${{ github.repository }}/compare/${previous}...${current}"
+            fi
+          } > CHANGELOG_RELEASE.md
+          cat CHANGELOG_RELEASE.md
+
+      - name: Build de artefatos (se aplicável)
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [ -f pyproject.toml ]; then
+            python -m pip install --upgrade build
+            python -m build || true
+          fi
+          if [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.build?0:1)"; then
+            npm ci || npm install
+            npm run build || true
+            tar -czf "dist/build-${{ steps.tag.outputs.tag }}.tar.gz" $( [ -d dist ] && echo dist ) $( [ -d build ] && echo build ) 2>/dev/null || true
+          fi
+          ls -la dist || true
+
+      - name: Criar release no GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          body_path: CHANGELOG_RELEASE.md
+          draft: false
+          prerelease: ${{ contains(steps.tag.outputs.tag, '-rc') || contains(steps.tag.outputs.tag, '-beta') || contains(steps.tag.outputs.tag, '-alpha') }}
+          files: |
+            dist/*
+          fail_on_unmatched_files: false
