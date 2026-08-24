@@ -1,6 +1,9 @@
 name: Docker · Build & Push (GHCR)
 
 on:
+  # Permite que outros repositorios reutilizem este workflow
+  workflow_call:
+
   push:
     branches: [main, master]
     tags: ['v*.*.*']
