@@ -1,0 +1,29 @@
+# Rótulos automáticos por caminho de arquivo (actions/labeler v5)
+
+documentação:
+  - changed-files:
+      - any-glob-to-any-file: ['**/*.md', 'docs/**']
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ['.github/**']
+
+python:
+  - changed-files:
+      - any-glob-to-any-file: ['**/*.py', 'pyproject.toml', 'requirements*.txt']
+
+javascript:
+  - changed-files:
+      - any-glob-to-any-file: ['**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx', 'package.json']
+
+docker:
+  - changed-files:
+      - any-glob-to-any-file: ['Dockerfile*', 'docker-compose*.y*ml', '.dockerignore']
+
+testes:
+  - changed-files:
+      - any-glob-to-any-file: ['tests/**', 'test/**', '**/*.test.*', '**/*.spec.*', '**/test_*.py']
+
+dependências:
+  - changed-files:
+      - any-glob-to-any-file: ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'poetry.lock', 'requirements*.txt']
