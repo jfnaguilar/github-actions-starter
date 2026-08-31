@@ -25,7 +25,7 @@ jobs:
       has_tests: ${{ steps.check.outputs.has_tests }}
       has_pyproject: ${{ steps.check.outputs.has_pyproject }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - id: check
         shell: bash
@@ -54,9 +54,9 @@ jobs:
     if: needs.detect.outputs.found == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: pip
@@ -77,9 +77,9 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: pip
@@ -109,9 +109,9 @@ jobs:
           - os: macos-latest
             python-version: '3.12'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -139,7 +139,7 @@ jobs:
 
       - name: Publicar cobertura
         if: needs.detect.outputs.has_tests == 'true' && matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-python
           path: coverage.xml
@@ -151,9 +151,9 @@ jobs:
     if: needs.detect.outputs.found == 'true' && needs.detect.outputs.has_pyproject == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -163,7 +163,7 @@ jobs:
           python -m build
           twine check dist/*
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: python-dist
           path: dist/

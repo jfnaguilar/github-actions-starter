@@ -21,7 +21,7 @@ jobs:
     permissions:
       pull-requests: read
     steps:
-      - uses: amannn/action-semantic-pull-request@v5
+      - uses: amannn/action-semantic-pull-request@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -51,7 +51,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Rótulos por caminho de arquivo
-        uses: actions/labeler@v5
+        uses: actions/labeler@v7
         continue-on-error: true
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -81,7 +81,7 @@ jobs:
     name: Validar os próprios workflows
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: actionlint
         run: |
