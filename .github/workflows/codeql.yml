@@ -24,7 +24,7 @@ jobs:
       languages: ${{ steps.set.outputs.languages }}
       any: ${{ steps.set.outputs.any }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - id: set
         shell: bash
@@ -63,7 +63,7 @@ jobs:
       matrix:
         language: ${{ fromJSON(needs.detect.outputs.languages) }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Inicializar CodeQL
         uses: github/codeql-action/init@v4
